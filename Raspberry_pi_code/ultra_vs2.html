@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garbage Monitoring Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .status {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .bin {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            width: 30%;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .alert {
+            color: red;
+            font-weight: bold;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+        .bin.low {
+            background: #90ee90;
+        }
+        .bin.medium {
+            background: #ffd700;
+        }
+        .bin.high {
+            background: #ff6961;
+        }
+        .refresh-btn {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 10px;
+            text-align: center;
+            background: #007bff;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Garbage Monitoring Dashboard</h1>
+        <div class="status">
+            <div class="bin" id="bin1">Bin 1: <span>Loading...</span></div>
+        </div>
+        <div class="refresh-btn" onclick="updateBins()">Refresh Data</div>
+    </div>
+
+    <script>
+        function updateBins() {
+            fetch('http://130.1.20.165:5000/api/get_data')
+                .then(response => response.json())
+                .then(data => {
+                    const bin1Element = document.getElementById('bin1');
+                    const distance = data.bin1_distance;
+                    const maxDepth = 100;  // Adjust this if your bin is deeper
+                    const fillLevel = ((maxDepth - distance) / maxDepth) * 100;
+
+                    // Update bin text
+                    bin1Element.innerHTML = `Bin 1: <span>${fillLevel.toFixed(1)}%</span>`;
+
+                    // Remove previous classes
+                    bin1Element.classList.remove("low", "medium", "high");
+
+                    // Apply class based on fill level
+                    if (fillLevel < 20) {
+                        bin1Element.classList.add("low");
+                    } else if (fillLevel >= 20 && fillLevel <= 60) {
+                        bin1Element.classList.add("medium");
+                    } else {
+                        bin1Element.classList.add("high");
+                        bin1Element.innerHTML += ' <span class="alert">(ALERT!)</span>';  
+                    }
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        setInterval(updateBins, 5000);
+        updateBins();
+    </script>
+</body>
+</html>
