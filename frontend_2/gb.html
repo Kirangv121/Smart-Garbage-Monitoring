@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en" class="light-mode">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartWaste - Intelligent Garbage Monitoring System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --secondary: #1b5e20;
+            --accent: #4caf50;
+            --light: #e8f5e9;
+            --dark: #1a1a1a;
+            --gray: #f5f5f5;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Light Mode (Default) */
+        html.light-mode {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+            --stats-bg: #e8f5e9;
+            --header-bg: var(--primary);
+            --header-text: white;
+            --border-color: #dddddd;
+            --feature-shadow: rgba(0, 0, 0, 0.1);
+            --algo-bg: #f5f5f5;
+        }
+        
+        /* Dark Mode */
+        html.dark-mode {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --stats-bg: #1b2721;
+            --header-bg: #1b5e20;
+            --header-text: #ffffff;
+            --border-color: #333333;
+            --feature-shadow: rgba(0, 0, 0, 0.3);
+            --algo-bg: #2a2a2a;
+        }
+        
+        body {
+            color: var(--text-color);
+            line-height: 1.6;
+            background-color: var(--bg-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        header {
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            padding: 1rem;
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        .logo-icon {
+            margin-right: 10px;
+            font-size: 2rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+            align-items: center;
+        }
+        
+        .nav-links li {
+            margin-left: 2rem;
+        }
+        
+        .nav-links a {
+            color: var(--header-text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--light);
+        }
+        
+        .hero {
+           
+            background-image: url('img1.jpg');
+            background-size: cover;  
+            background-position: center;  
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding-top: 60px;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            padding: 2rem;
+            color: black;
+            font-weight: bold;
+            
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+        }
+        
+        section {
+            padding: 5rem 2rem;
+            background-color: var(--bg-color);
+            transition: background-color 0.3s;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .section-title p {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.8;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--feature-shadow);
+            transition: transform 0.3s, background-color 0.3s;
+            text-align: center;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+           
+        }
+        
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+        
+        .stats {
+            background-color: var(--stats-bg);
+            transition: background-color 0.3s;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+        
+        .stat-item {
+            padding: 1.5rem;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .how-it-works {
+            background-color: var(--bg-color);
+        }
+        
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .step-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .step-number {
+            background-color: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-card h3 {
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+        
+        .dashboard {
+            background-color: var(--stats-bg);
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        
+        .route-opt {
+            background-color: var(--stats-bg);
+            transition: background-color 0.3s;
+        }
+        
+        .route-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        
+        .route-content h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 2.2rem;
+        }
+        
+        .route-content p {
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+        
+        .route-benefits {
+            list-style: none;
+        }
+        
+        .route-benefits li {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            color: var(--text-color);
+        }
+        
+        .benefit-icon {
+            color: var(--primary);
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .algorithm-tabs {
+            margin-top: 3rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        
+        .tab-content {
+            padding: 2rem;
+            display: none;
+            color: var(--text-color);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .algorithm-diagram {
+            margin-top: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 1rem;
+            background-color: var(--algo-bg);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        /* Theme toggle styles */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            margin-left: 1rem;
+        }
+        
+        .toggle-label {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--header-text);
+        }
+        
+        .toggle-track {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            background-color: #3c4043;
+            border-radius: 12px;
+            margin: 0 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        
+        html.dark-mode .toggle-track {
+            background-color: #8abbff;
+        }
+        
+        html.dark-mode .toggle-thumb {
+            transform: translateX(26px);
+        }
+        
+        .toggle-icon {
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .route-columns {
+                grid-template-columns: 1fr;
+            }
+            
+            .route-content {
+                order: 2;
+            }
+            
+            .theme-toggle-mobile {
+                display: block;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 100;
+                background-color: var(--primary);
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            }
+            
+            .theme-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <span class="logo-icon">♻️</span> SmartWaste
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#route-optimization">Route Optimization</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="map.html" class="btn">Map</a></li>
+                <li><a href="bin2.html" class="btn">Bin</a></li>
+                <li class="theme-toggle">
+                    <label class="toggle-label">
+                        <span class="toggle-icon">☀️</span>
+                        <div class="toggle-track">
+                            <div class="toggle-thumb"></div>
+                        </div>
+                        <span class="toggle-icon">🌙</span>
+                    </label>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Mobile Theme Toggle for Small Screens -->
+    <div class="theme-toggle-mobile">
+        <label class="toggle-label">
+            <div class="toggle-track">
+                <div class="toggle-thumb"></div>
+            </div>
+        </label>
+    </div>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Smart Garbage Monitoring System</h1>
+            <p>Revolutionize waste management with real-time monitoring, AI-powered route optimization, and predictive analytics.</p>
+        </div>
+    </section>
+
+    <section id="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>Smart Features</h2>
+                <p>Our advanced IoT-based garbage monitoring system offers comprehensive tools to transform waste management in your city.</p>
+            </div>
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="img1.png"> </div>
+                    <h3>Real-time Monitoring</h3>
+                    <p>Track fill levels of garbage bins in real-time with ultrasonic sensors and data analytics.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="img2.png"></div>
+                    <h3>Route Optimization</h3>
+                    <p>Automatically generate optimized collection routes based on bin fill levels and traffic conditions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="img4.png"></div>
+                    <h3>Mobile Alerts</h3>
+                    <p>Receive notifications when bins need attention or when maintenance is required.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="img5.png"></div>
+                    <h3>Predictive Analytics</h3>
+                    <p>Forecast fill rates and optimize collection schedules with machine learning algorithms.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="img6.png"></div>
+                    <h3>Web Dashboard</h3>
+                    <p>Access comprehensive waste management data through an intuitive web interface.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="img7.png"></div>
+                    <h3>Energy Efficient</h3>
+                    <p>Solar-powered sensors with low energy consumption for sustainable operations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="route-optimization" class="route-opt">
+        <div class="container">
+            <div class="route-columns">
+                <div class="route-content">
+                    <h2>AI-Powered Route Optimization</h2>
+                    <p>Our advanced route optimization system leverages artificial intelligence to dynamically plan the most efficient collection routes, reducing operational costs and environmental impact.</p>
+                    
+                    <ul class="route-benefits">
+                        <li>
+                            <span class="benefit-icon">✓</span>
+                            <div>
+                                <strong>Dynamic Routing:</strong> Routes automatically adjust based on real-time bin fill levels, traffic conditions, and vehicle availability.
+                            </div>
+                        </li>
+                        <li>
+                            <span class="benefit-icon">✓</span>
+                            <div>
+                                <strong>Multi-Vehicle Coordination:</strong> Optimize routes across your entire fleet to maximize efficiency and minimize overlap.
+                            </div>
+                        </li>
+                        <li>
+                            <span class="benefit-icon">✓</span>
+                            <div>
+                                <strong>Priority-Based Collection:</strong> Automatically prioritize bins nearing capacity or in high-traffic areas.
+                            </div>
+                        </li>
+                        <li>
+                            <span class="benefit-icon">✓</span>
+                            <div>
+                                <strong>Fuel Optimization:</strong> Reduce fuel consumption by up to 30% with efficient routing algorithms.
+                            </div>
+                        </li>
+                        <li>
+                            <span class="benefit-icon">✓</span>
+                            <div>
+                                <strong>Time-Window Constraints:</strong> Incorporate specific collection time windows for different areas or bin types.
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="algorithm-tabs">
+                <div class="tab-content">
+                    <h3>Genetic Algorithm Approach</h3>
+                    <p>Our genetic algorithm solves the complex routing problem by mimicking natural selection. It generates multiple possible routes, evaluates their efficiency, and combines the best features of high-performing routes to create even better solutions.</p>
+                    <p>Key benefits:</p>
+                    <ul>
+                        <li>Explores a wide range of possible solutions</li>
+                        <li>Finds near-optimal routes even in complex scenarios</li>
+                        <li>Balances computation speed with solution quality</li>
+                    </ul>
+                    <div class="algorithm-diagram">
+                        Genetic Algorithm Process:
+                        <pre>Real-time monitoring → Effective decision-making → Optimized garbage collection routes.</pre>
+                    </div>
+                </div>
+                
+                <div class="tab-content">
+                    <h3>Ant Colony Optimization</h3>
+                    <p>Inspired by ant foraging behavior, this algorithm finds efficient routes by simulating how ants leave pheromone trails. Our implementation is specifically tailored for waste collection, factoring in bin fill levels, truck capacity, and road constraints.</p>
+                    <p>Key benefits:</p>
+                    <ul>
+                        <li>Excellent for dynamic route planning</li>
+                        <li>Efficiently handles large-scale problems</li>
+                        <li>Self-organizes to find optimal paths</li>
+                    </ul>
+                    <div class="algorithm-diagram">
+                        Ant Colony Process:
+                        <pre>Real-time monitoring → Effective decision-making → Optimized garbage collection routes</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="container">
+            <div class="section-title">
+                <h2>Making an Impact</h2>
+                <p>Our garbage monitoring system has helped cities around the world improve their waste management efficiency.</p>
+            </div>
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-number">30%</div>
+                    <p>Reduction in collection costs</p>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">45%</div>
+                    <p>Decrease in overflow incidents</p>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">25%</div>
+                    <p>Less fuel consumption</p>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <p>Cities implemented</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <div class="section-title">
+                <h2>How It Works</h2>
+                <p>Our comprehensive garbage monitoring system uses IoT technology to revolutionize waste management.</p>
+            </div>
+            <div class="steps">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Install Sensors</h3>
+                    <p>Ultrasonic sensors are installed in garbage bins to measure fill levels and detect temperature, humidity, and gas levels.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Collect & Transmit Data</h3>
+                    <p>Sensors continuously collect data and transmit it to the cloud server through GSM/GPRS modules.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Process & Analyze</h3>
+                    <p>Our system processes the data, generates insights, and identifies patterns using machine learning algorithms.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h3>Optimize Routes</h3>
+                    <p>Based on fill levels and historical data, the system generates optimized collection routes for waste management vehicles.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">5</div>
+                    <h3>Monitor & Act</h3>
+                    <p>Administrators monitor waste management through dashboards and receive alerts for immediate action when needed.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">6</div>
+                    <h3>Improve Over Time</h3>
+                    <p>The system continuously learns and improves, providing increasingly accurate predictions and optimizations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="dashboard" class="dashboard">
+        <div class="container">
+            <div class="section-title">
+                <h2>Powerful Dashboard</h2>
+                <p>Get comprehensive insights into your waste management operations with our intuitive dashboard.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get toggle elements
+            const toggleLabels = document.querySelectorAll('.toggle-label');
+            const htmlElement = document.documentElement;
+            
+            // Initialize theme from localStorage if available
+            if (localStorage.getItem('theme') === 'dark') {
+                htmlElement.classList.remove('light-mode');
+                htmlElement.classList.add('dark-mode');
+            } else {
+                htmlElement.classList.remove('dark-mode');
+                htmlElement.classList.add('light-mode');
+            }
+            
+            // Add event listeners to all toggle elements
+            toggleLabels.forEach(function(toggleLabel) {
+                toggleLabel.addEventListener('click', function() {
+                    // Toggle dark mode class
+                    if (htmlElement.classList.contains('dark-mode')) {
+                        htmlElement.classList.remove('dark-mode');
+                        htmlElement.classList.add('light-mode');
+                        localStorage.setItem('theme', 'light');
+                    } else {
+                        htmlElement.classList.remove('light-mode');
+                        htmlElement.classList.add('dark-mode');
+                        localStorage.setItem('theme', 'dark');
+                    }
+                });
+            });
+            
+            // Show the first tab content by default
+            document.querySelector('.tab-content').classList.add('active');
+        });
+    </script>
+</body>
+</html>

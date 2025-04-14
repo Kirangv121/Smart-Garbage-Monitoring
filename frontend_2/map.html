@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Garbage Monitoring Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #f7fcf7;
+      margin: 0;
+      height: 100vh;
+    }
+    
+    .dashboard-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+      width: 90%;
+      max-width: 1000px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      overflow: hidden;
+    }
+    
+    .dashboard-header {
+      background: linear-gradient(135deg, #9be29b 0%, #c5f7c5 100%);
+      color: #2d4c2d;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .dashboard-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .dashboard-subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: 5px;
+    }
+    
+    .dashboard-content {
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    
+    @media (min-width: 768px) {
+      .dashboard-content {
+        flex-direction: row;
+      }
+    }
+    
+    .map-section {
+      flex: 2;
+      margin-right: 0;
+      margin-bottom: 20px;
+    }
+    
+    @media (min-width: 768px) {
+      .map-section {
+        margin-right: 20px;
+        margin-bottom: 0;
+      }
+    }
+    
+    .info-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .map-container {
+      width: 100%;
+      height: 400px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .control-panel {
+      background-color: #f5fbf5;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+    
+    .control-panel-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #2d4c2d;
+      display: flex;
+      align-items: center;
+    }
+    
+    .control-panel-title i {
+      margin-right: 8px;
+      color: #88cc88;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .action-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .action-btn i {
+      margin-right: 8px;
+    }
+    
+    .primary-btn {
+      background-color: #88cc88;
+      color: white;
+    }
+    
+    .primary-btn:hover {
+      background-color: #6db86d;
+    }
+    
+    .secondary-btn {
+      background-color: #e3f5e3;
+      color: #2d4c2d;
+    }
+    
+    .secondary-btn:hover {
+      background-color: #d0eed0;
+    }
+    
+    .status-section {
+      background-color: #f5fbf5;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+    
+    .status-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #2d4c2d;
+      display: flex;
+      align-items: center;
+    }
+    
+    .status-title i {
+      margin-right: 8px;
+      color: #88cc88;
+    }
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e3f5e3;
+    }
+    
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    
+    .status-item-label {
+      color: #578157;
+      font-size: 14px;
+    }
+    
+    .status-item-value {
+      font-weight: 500;
+      color: #2d4c2d;
+    }
+    
+    .route-info {
+      padding: 15px;
+      background-color: #f5fbf5;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+    
+    .route-info-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #2d4c2d;
+      display: flex;
+      align-items: center;
+    }
+    
+    .route-info-title i {
+      margin-right: 8px;
+      color: #88cc88;
+    }
+    
+    .route-details {
+      background-color: white;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 14px;
+      color: #2d4c2d;
+      border-left: 4px solid #88cc88;
+    }
+
+    .loading-indicator {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .loading-indicator i {
+      margin-right: 10px;
+      color: #88cc88;
+    }
+
+    .bin-status {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .bin-full {
+      background-color: #ef4444;
+    }
+
+    .bin-partial {
+      background-color: #f59e0b;
+    }
+
+    .bin-empty {
+      background-color: #10b981;
+    }
+
+    .custom-marker-icon {
+      text-align: center;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .bin-legend {
+      display: flex;
+      margin-top: 15px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+      font-size: 12px;
+      color: #578157;
+    }
+  </style>
+</head>
+<body>
+  <div class="flex items-center justify-center h-full bg-gradient-to-br from-green-50 via-green-100 to-green-200">
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Smart Waste Management System</h1>
+        <p class="dashboard-subtitle">Real-time monitoring & route optimization</p>
+      </div>
+      
+      <div class="dashboard-content">
+        <div class="map-section">
+          <div id="map" class="map-container"></div>
+          <div class="route-info">
+            <div class="route-info-title">
+              <i class="fas fa-route"></i> Route Information
+            </div>
+            <div id="route-info" class="route-details">
+              No route calculated. Click "Calculate Optimal Route" to begin.
+            </div>
+            <div id="loading-indicator" class="loading-indicator">
+              <i class="fas fa-circle-notch fa-spin"></i> Calculating optimal route...
+            </div>
+            <div class="bin-legend">
+              <div class="legend-item">
+                <span class="bin-status bin-full"></span> Full
+              </div>
+              <div class="legend-item">
+                <span class="bin-status bin-partial"></span> Partial
+              </div>
+              <div class="legend-item">
+                <span class="bin-status bin-empty"></span> Empty
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="info-section">
+          <div class="control-panel">
+            <div class="control-panel-title">
+              <i class="fas fa-sliders"></i> Route Controls
+            </div>
+            <div class="action-buttons">
+              <button id="calculate-route-btn" class="action-btn primary-btn">
+                <i class="fas fa-calculator"></i> Calculate Optimal Route
+              </button>
+            </div>
+            <div class="action-buttons">
+              <button id="add-start-point-btn" class="action-btn secondary-btn">
+                <i class="fas fa-map-marker-alt"></i> Set Starting Point
+              </button>
+              <button id="reset-btn" class="action-btn secondary-btn">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+          </div>
+          
+          <div class="status-section">
+            <div class="status-title">
+              <i class="fas fa-chart-bar"></i> System Status
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Total Bins</span>
+              <span id="total-bins" class="status-item-value">6</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Full Bins</span>
+              <span id="full-bins" class="status-item-value">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Partially Full</span>
+              <span id="partial-bins" class="status-item-value">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Last Update</span>
+              <span class="status-item-value">Today, 10:30 AM</span>
+            </div>
+          </div>
+          
+          <div class="status-section">
+            <div class="status-title">
+              <i class="fas fa-info-circle"></i> Route Details
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Total Distance</span>
+              <span id="total-distance" class="status-item-value">-</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Estimated Time</span>
+              <span id="estimated-time" class="status-item-value">-</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Bins to Collect</span>
+              <span id="bins-to-collect" class="status-item-value">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Initialize map - Bangalore coordinates
+      const baseCoordinates = [12.9716, 77.5946];
+      let map = L.map('map').setView(baseCoordinates, 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Helper function to generate random coordinates within a specific range
+      function getRandomCoordinates(baseLat, baseLng, radiusKm) {
+        // Earth's radius in kilometers
+        const earthRadius = 6371;
+        
+        // Convert radius from kilometers to radians
+        const radiusRadians = radiusKm / earthRadius;
+        
+        // Convert base coordinates to radians
+        const baseLatRad = baseLat * Math.PI / 180;
+        const baseLngRad = baseLng * Math.PI / 180;
+        
+        // Generate random angle and distance
+        const randomAngle = Math.random() * 2 * Math.PI;
+        const randomDistance = Math.random() * radiusRadians;
+        
+        // Calculate new position
+        const newLatRad = Math.asin(Math.sin(baseLatRad) * Math.cos(randomDistance) + 
+                         Math.cos(baseLatRad) * Math.sin(randomDistance) * Math.cos(randomAngle));
+        const newLngRad = baseLngRad + Math.atan2(Math.sin(randomAngle) * Math.sin(randomDistance) * Math.cos(baseLatRad),
+                         Math.cos(randomDistance) - Math.sin(baseLatRad) * Math.sin(newLatRad));
+        
+        // Convert back to degrees
+        const newLat = newLatRad * 180 / Math.PI;
+        const newLng = newLngRad * 180 / Math.PI;
+        
+        return [newLat, newLng];
+      }
+
+      // Function to generate random bin status
+      function getRandomBinStatus() {
+        const statuses = ['Full', 'Partial', 'Empty'];
+        const randomIndex = Math.floor(Math.random() * statuses.length);
+        return statuses[randomIndex];
+      }
+
+      // Generate random garbage bins
+      function generateRandomBins(numberOfBins) {
+        const bins = [];
+        for (let i = 0; i < numberOfBins; i++) {
+          const position = getRandomCoordinates(baseCoordinates[0], baseCoordinates[1], 2);
+          const status = getRandomBinStatus();
+          bins.push({ position, status });
+        }
+        return bins;
+      }
+
+      // Custom marker function
+      function createCustomMarker(latlng, fillColor, binStatus) {
+        const markerHtml = `
+          <div class="custom-marker-icon" style="background-color: ${fillColor}; width: 30px; height: 30px;">
+            <i class="fas fa-trash-alt"></i>
+          </div>
+        `;
+        
+        const icon = L.divIcon({
+          html: markerHtml,
+          className: '',
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        });
+        
+        const marker = L.marker(latlng, { icon });
+        marker.status = binStatus;
+        marker.bindPopup(`<b>Garbage Bin</b><br>Status: ${binStatus}<br>Location: ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`);
+        return marker;
+      }
+
+      // Generate random garbage bins (6 bins)
+      const numberOfBins = 6;
+      let garbageBins = generateRandomBins(numberOfBins);
+
+      // Initialize bins layer group
+      let binsLayer = L.layerGroup().addTo(map);
+      
+      // Update bin stats in UI
+      function updateBinStats() {
+        let fullCount = 0;
+        let partialCount = 0;
+        
+        garbageBins.forEach(bin => {
+          if (bin.status === 'Full') fullCount++;
+          if (bin.status === 'Partial') partialCount++;
+        });
+        
+        document.getElementById('total-bins').textContent = garbageBins.length;
+        document.getElementById('full-bins').textContent = fullCount;
+        document.getElementById('partial-bins').textContent = partialCount;
+      }
+      
+      // Add garbage bins to map
+      function addBinsToMap() {
+        binsLayer.clearLayers();
+        
+        garbageBins.forEach(bin => {
+          let fillColor;
+          switch(bin.status) {
+            case 'Full': 
+              fillColor = '#ef4444'; // Red
+              break;
+            case 'Partial': 
+              fillColor = '#f59e0b'; // Orange
+              break;
+            case 'Empty': 
+              fillColor = '#10b981'; // Green
+              break;
+          }
+          
+          const marker = createCustomMarker(
+            L.latLng(bin.position[0], bin.position[1]), 
+            fillColor,
+            bin.status
+          );
+          
+          binsLayer.addLayer(marker);
+        });
+        
+        // Update stats in UI
+        updateBinStats();
+      }
+      
+      // Initial map setup
+      addBinsToMap();
+      
+      // Variables
+      let startingPoint = null;
+      let routeControl = null;
+      let addingStartingPoint = false;
+      
+      // Add starting point functionality
+      document.getElementById('add-start-point-btn').addEventListener('click', function() {
+        addingStartingPoint = true;
+        document.getElementById('route-info').textContent = 'Click on the map to set your starting point.';
+        document.getElementById('add-start-point-btn').innerHTML = '<i class="fas fa-map-marker-alt"></i> Selecting...';
+        
+        // Change cursor
+        document.getElementById('map').style.cursor = 'crosshair';
+      });
+      
+      // Map click event
+      map.on('click', function(e) {
+        if (addingStartingPoint) {
+          if (startingPoint) {
+            map.removeLayer(startingPoint);
+          }
+          
+          // Create starting point marker
+          const startIcon = L.divIcon({
+            html: '<div style="background-color: #88cc88; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fas fa-flag" style="color: white;"></i></div>',
+            className: '',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+          });
+          
+          startingPoint = L.marker(e.latlng, { icon: startIcon }).addTo(map);
+          startingPoint.bindPopup('<b>Starting Point</b><br>' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5)).openPopup();
+          
+          // Reset state
+          addingStartingPoint = false;
+          document.getElementById('add-start-point-btn').innerHTML = '<i class="fas fa-map-marker-alt"></i> Set Starting Point';
+          document.getElementById('route-info').textContent = 'Starting point set. Ready to calculate route.';
+          document.getElementById('map').style.cursor = '';
+        }
+      });
+      
+   // Calculate route
+document.getElementById('calculate-route-btn').addEventListener('click', function() {
+  // Show loading indicator
+  document.getElementById('loading-indicator').style.display = 'flex';
+  document.getElementById('route-info').textContent = 'Calculating optimal route...';
+  
+  // Clear any existing route
+  if (routeControl) {
+    map.removeControl(routeControl);
+  }
+  
+  setTimeout(function() {
+    let waypoints = [];
+    
+    // Add starting point if it exists
+    if (startingPoint) {
+      waypoints.push(startingPoint.getLatLng());
+    }
+    
+    // Filter to include ONLY full bins (status = 'Full')
+    let fullBins = garbageBins.filter(bin => bin.status === 'Full');
+    
+    // Add full bin waypoints
+    fullBins.forEach(bin => {
+      waypoints.push(L.latLng(bin.position[0], bin.position[1]));
+    });
+    
+    // Add back to starting point if it exists
+    if (startingPoint) {
+      waypoints.push(startingPoint.getLatLng());
+    }
+    
+    // Only create a route if there are waypoints to visit
+    if (waypoints.length > 1) {
+      // Create route with BLUE color instead of green
+      routeControl = L.Routing.control({
+        waypoints: waypoints,
+        routeWhileDragging: false,
+        lineOptions: {
+          styles: [
+            {color: 'white', opacity: 0.9, weight: 9},
+            {color: '#3b82f6', opacity: 1, weight: 6} // Changed to blue
+          ]
+        },
+        createMarker: function() { 
+          return null; // Don't create markers for waypoints 
+        }
+      }).addTo(map);
+      
+      // Update route info when route is calculated
+      routeControl.on('routesfound', function(e) {
+        const routes = e.routes;
+        const summary = routes[0].summary;
+        
+        // Calculate time in minutes
+        const timeInMinutes = Math.round(summary.totalTime / 60);
+        
+        // Update UI
+        document.getElementById('loading-indicator').style.display = 'none';
+        document.getElementById('route-info').innerHTML = `
+          Optimal route calculated through ${waypoints.length - (startingPoint ? 2 : 0)} full bins.
+        `;
+        document.getElementById('total-distance').textContent = (summary.totalDistance / 1000).toFixed(2) + ' km';
+        document.getElementById('estimated-time').textContent = timeInMinutes + ' min';
+        document.getElementById('bins-to-collect').textContent = waypoints.length - (startingPoint ? 2 : 0);
+      });
+    } else {
+      // Handle case when there are no full bins
+      document.getElementById('loading-indicator').style.display = 'none';
+      document.getElementById('route-info').innerHTML = 'No full bins found. Nothing to collect.';
+      document.getElementById('total-distance').textContent = '-';
+      document.getElementById('estimated-time').textContent = '-';
+      document.getElementById('bins-to-collect').textContent = '0';
+    }
+  }, 1500); // Simulated delay for calculation
+});
+    </script>
+  </div>
+</body>
+</html>

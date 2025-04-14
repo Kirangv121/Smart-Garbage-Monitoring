@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional Risk Assessment Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', 'SF Pro Display', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #e8f5e9; /* Changed background to light green */
+      color: #1a1f36;
+    }
+    
+    .dashboard {
+      width: 440px;
+      background-color: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dashboard-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    
+    .dashboard-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      color: #1a1f36;
+      letter-spacing: -0.3px;
+    }
+    
+    .dashboard-subtitle {
+      font-size: 15px;
+      color: #64748b;
+      margin: 0;
+      font-weight: 400;
+    }
+    
+    .gauge-container {
+      width: 320px;
+      position: relative;
+      margin: 0 auto;
+    }
+    
+    .gauge-segments {
+      position: relative;
+      height: 160px;
+      overflow: hidden;
+    }
+    
+    .segment {
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%);
+      transform-origin: center center;
+      box-sizing: border-box;
+      opacity: 0.92;
+    }
+    
+    /* Professional color gradient */
+    .segment-1 {
+      background-color: #24a148; /* Green */
+      transform: rotate(180deg);
+      z-index: 9;
+    }
+    
+    .segment-2 {
+      background-color: #42be65;
+      transform: rotate(200deg);
+      z-index: 8;
+    }
+    
+    .segment-3 {
+      background-color: #6fdc8c;
+      transform: rotate(220deg);
+      z-index: 7;
+    }
+    
+    .segment-4 {
+      background-color: #f1c21b;
+      transform: rotate(240deg);
+      z-index: 6;
+    }
+    
+    .segment-5 {
+      background-color: #f1c21b;
+      transform: rotate(260deg);
+      z-index: 5;
+    }
+    
+    .segment-6 {
+      background-color: #ff832b;
+      transform: rotate(280deg);
+      z-index: 4;
+    }
+    
+    .segment-7 {
+      background-color: #ff832b;
+      transform: rotate(300deg);
+      z-index: 3;
+    }
+    
+    .segment-8 {
+      background-color: #fa4d56;
+      transform: rotate(320deg);
+      z-index: 2;
+    }
+    
+    .segment-9 {
+      background-color: #da1e28;
+      transform: rotate(340deg);
+      z-index: 1;
+    }
+    
+    .segment-10 {
+      background-color: #a2191f; /* Dark Red */
+      transform: rotate(360deg);
+      z-index: 0;
+    }
+    
+    .gauge-center {
+      position: absolute;
+      width: 216px;
+      height: 216px;
+      border-radius: 50%;
+      background: white;
+      top: 52px;
+      left: 52px;
+      z-index: 10;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .gauge-needle-container {
+      position: absolute;
+      width: 100%;
+      height: 160px;
+      top: 0;
+      left: 0;
+      z-index: 11;
+    }
+    
+    .gauge-needle {
+      position: absolute;
+      width: 106px;
+      height: 106px;
+      bottom: 0;
+      left: calc(50% - 53px);
+      transform-origin: 50% 100%;
+      transform: rotate(-90deg);
+      transition: transform 1.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .needle {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 95px;
+      background-image: linear-gradient(to bottom, rgba(26, 31, 54, 0.7) 0%, #1a1f36 100%);
+      transform-origin: 50% 100%;
+    }
+    
+    .needle:after {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 16px solid rgba(26, 31, 54, 0.9);
+    }
+    
+    .needle-center {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #444 0%, #1a1f36 70%);
+      bottom: -10px;
+      left: calc(50% - 10px);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+    }
+    
+    .gauge-labels {
+      position: relative;
+      height: 30px;
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 8px;
+      font-size: 13px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    
+    .value-display {
+      text-align: center;
+      margin: 12px 0 24px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1f36;
+      letter-spacing: -0.5px;
+    }
+    
+    .controls {
+      margin-top: 12px;
+      width: 100%;
+    }
+    
+    .slider-container {
+      position: relative;
+      width: 100%;
+      height: 40px;
+      margin-bottom: 5px;
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #e6e8eb;
+      border-radius: 3px;
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #0f62fe;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 2px solid white;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+    }
+    
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: #0043ce;
+      transform: scale(1.05);
+    }
+    
+    .tick-marks {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    
+    .tick {
+      width: 1px;
+      height: 8px;
+      background-color: #cbd5e1;
+    }
+    
+    .tick.major {
+      height: 12px;
+      width: 2px;
+      background-color: #94a3b8;
+    }
+    
+    .status-label {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 8px 0;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+    
+    .risk-explanation {
+      margin-top: 20px;
+      padding: 12px 16px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #475569;
+      line-height: 1.5;
+      border-left: 4px solid #0f62fe;
+    }
+    
+    .timestamp {
+      text-align: right;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 16px;
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">Risk Assessment Dashboard</h1>
+      <p class="dashboard-subtitle">Enterprise Monitoring System</p>
+    </div>
+    
+    <div class="gauge-container">
+      <div class="gauge-segments">
+        <!-- Color segments (professionally chosen colors) -->
+        <div class="segment segment-1"></div>
+        <div class="segment segment-2"></div>
+        <div class="segment segment-3"></div>
+        <div class="segment segment-4"></div>
+        <div class="segment segment-5"></div>
+        <div class="segment segment-6"></div>
+        <div class="segment segment-7"></div>
+        <div class="segment segment-8"></div>
+        <div class="segment segment-9"></div>
+        <div class="segment segment-10"></div>
+        
+        <!-- White center -->
+        <div class="gauge-center"></div>
+        
+        <!-- Needle -->
+        <div class="gauge-needle-container">
+          <div class="gauge-needle" id="needle">
+            <div class="needle"></div>
+            <div class="needle-center"></div>
+          </div>
+        </div>
+      </div>
+      
+      
+      
+      <div class="gauge-labels">
+        <span>Low Risk</span>
+        <span>Moderate</span>
+        <span>High Risk</span>
+      </div>
+      
+      <div class="value-display" id="value-display">30%</div>
+      
+      <div class="controls">
+        <div class="slider-container">
+          <input type="range" id="gauge-control" min="0" max="100" value="30" step="1">
+          <div class="tick-marks">
+            <div class="tick major"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick major"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+            <div class="tick major"></div>
+            <div class="tick"></div>
+            <div class="tick"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="status-label" id="status-label">Moderate Risk Level</div>
+      
+      <div class="risk-explanation" id="risk-explanation">
+        Current assessment indicates moderate risk levels that require standard monitoring protocols. Review the latest metrics in the compliance dashboard for more details.
+      </div>
+      
+      <div class="timestamp" id="timestamp">Last updated: Just now</div>
+    </div>
+  </div>
+
+  <script>
+    const needle = document.getElementById('needle');
+    const gaugeControl = document.getElementById('gauge-control');
+    const valueDisplay = document.getElementById('value-display');
+    const statusLabel = document.getElementById('status-label');
+    const riskExplanation = document.getElementById('risk-explanation');
+    const timestamp = document.getElementById('timestamp');
+    
+    function updateGauge(value) {
+      // Convert 0-100 value to degrees (-90 to 90)
+      const degrees = -90 + (value * 1.8);
+      
+      // Update needle position
+      needle.style.transform = `rotate(${degrees}deg)`;
+      
+      // Update value display
+      valueDisplay.textContent = `${value}%`;
+      
+      // Update status label and explanation
+      if (value < 30) {
+        statusLabel.textContent = 'Low Risk Level';
+        statusLabel.style.color = '#24a148'; // Green
+        statusLabel.style.backgroundColor = 'rgba(36, 161, 72, 0.1)';
+        riskExplanation.textContent = 'System performing within optimal parameters. Continue standard monitoring and maintain current security protocols.';
+        riskExplanation.style.borderLeftColor = '#24a148';
+      } else if (value < 70) {
+        statusLabel.textContent = 'Moderate Risk Level';
+        statusLabel.style.color = '#ff832b'; // Orange
+        statusLabel.style.backgroundColor = 'rgba(255, 131, 43, 0.1)';
+        riskExplanation.textContent = 'Current assessment indicates moderate risk levels that require standard monitoring protocols. Review the latest metrics in the compliance dashboard for more details.';
+        riskExplanation.style.borderLeftColor = '#ff832b';
+      } else {
+        statusLabel.textContent = 'High Risk Level';
+        statusLabel.style.color = '#da1e28'; // Red
+        statusLabel.style.backgroundColor = 'rgba(218, 30, 40, 0.1)';
+        riskExplanation.textContent = 'Elevated risk detected. Immediate attention required. Consider implementing contingency protocols and increasing monitoring frequency.';
+        riskExplanation.style.borderLeftColor = '#da1e28';
+      }
+      
+      // Update timestamp
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      timestamp.textContent = `Last updated:10:30 A.M`;
+    }
+    
+    // Initialize gauge
+    updateGauge(gaugeControl.value);
+    
+    // Update gauge on slider change
+    gaugeControl.addEventListener('input', function() {
+      updateGauge(parseInt(this.value));
+    });
+    
+    // Add animation on page load
+    window.addEventListener('load', function() {
+      // Animate from 0 to the initial value
+      let currentValue = 0;
+      const targetValue = parseInt(gaugeControl.value);
+      const interval = setInterval(function() {
+        if (currentValue >= targetValue) {
+          clearInterval(interval);
+          return;
+        }
+        currentValue += 1;
+        updateGauge(currentValue);
+      }, 20);
+    });
+  </script>
+</body>
+</html>
