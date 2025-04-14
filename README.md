@@ -28,8 +28,7 @@ LED Bulb:Provides visual indicator (e.g., lights up when someone approaches or w
 Cloud Sync:Sends all data to the backend in real time.
 
 # 🌟 Key Features:
-Real-time waste level detection using ultrasonic sensor
-Automatic lid control via motion detection + servo motor
+Real-time waste level detection using ultrasonic sensor\n Automatic lid control via motion detection + servo motor
 LED indicator for visual feedback
 Dashboard for centralized monitoring
 SMS alerts to authorities when bin is full
