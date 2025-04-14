@@ -1,5 +1,6 @@
 ﻿# Smart-Garbage-Monitoring
  ## Deployed link : https://kgvsmartgarbagemonitoring.netlify.app/
+ ## youtube link : https://youtu.be/fTx8DRR-quc
 
  🗑️ Smart Garbage Monitoring System – Final Overview
 🔧 Project Objective:
